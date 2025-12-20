@@ -4,7 +4,7 @@ import mlflow
 import mlflow.sklearn
 
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegressionimport os
+from sklearn.linear_model import LogisticRegression
 import pandas as pd
 import mlflow
 import mlflow.sklearn
@@ -85,4 +85,3 @@ def train_model():
 
 if __name__ == "__main__":
     train_model()
-

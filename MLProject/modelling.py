@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import mlflow
 import mlflow.sklearn
+import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
@@ -16,7 +17,6 @@ def train_model():
         "students_clean.csv"
     )
 
-    # Cek apakah file ada sebelum dibaca
     if not os.path.exists(data_path):
         raise FileNotFoundError(f"File data tidak ditemukan di: {data_path}")
         
@@ -36,32 +36,38 @@ def train_model():
         X_scaled, y, test_size=0.2, random_state=42, stratify=y
     )
 
-    # 6. Inisialisasi Model
+    # 6. Aktifkan Autolog
+    # Ini akan mencatat parameter, metrik, dan model secara otomatis ke MLflow
+    mlflow.sklearn.autolog()
+
+    # 7. Inisialisasi Model
     model = LogisticRegression(max_iter=1000)
     
-    # 7. Training Model
-    model.fit(X_train, y_train)
-
-    # 8. Evaluasi
-    y_pred = model.predict(X_test)
-    acc = accuracy_score(y_test, y_pred)
-
-    # 9. Logging ke MLflow dengan Proteksi Active Run
-    # Ini adalah kunci agar tidak error di GitHub Actions
+    # 8. Proses Training & Logging
     run = mlflow.active_run()
     if run:
-        # Jika dijalankan via 'mlflow run', gunakan sesi yang ada
-        mlflow.log_metric("accuracy", acc)
-        mlflow.sklearn.log_model(model, artifact_path="model")
-        print(f"Logged to active run: {run.info.run_id}")
+        # Jika dijalankan via 'mlflow run' (GitHub Actions)
+        model.fit(X_train, y_train)
     else:
-        # Jika dijalankan manual (python modelling.py), buat sesi baru
-        with mlflow.start_run(run_name="Manual Training"):
-            mlflow.log_metric("accuracy", acc)
-            mlflow.sklearn.log_model(model, artifact_path="model")
-            print("Logged to new manual run")
+        # Jika dijalankan manual
+        with mlflow.start_run(run_name="Manual Training with Autolog"):
+            model.fit(X_train, y_train)
 
+    # 9. Evaluasi Manual (Tambahan)
+    y_pred = model.predict(X_test)
+    acc = accuracy_score(y_test, y_pred)
     print(f"Final Accuracy: {acc}")
+
+    # 10. SIMPAN MODEL & SCALER KE JOBLIB (Untuk inference.py)
+    # Disimpan di folder yang sama dengan modelling.py
+    model_save_path = os.path.join(base_dir, "model.pkl")
+    scaler_save_path = os.path.join(base_dir, "scaler.pkl")
+
+    joblib.dump(model, model_save_path)
+    joblib.dump(scaler, scaler_save_path)
+
+    print(f"Model disimpan di: {model_save_path}")
+    print(f"Scaler disimpan di: {scaler_save_path}")
 
 if __name__ == "__main__":
     train_model()

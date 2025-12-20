@@ -8,15 +8,15 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
 
-if __name__ == "__main__":
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    DATA_PATH = os.path.join(
-        BASE_DIR,
+def train_model():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    data_path = os.path.join(
+        base_dir,
         "students_performance_preprocessing",
         "students_clean.csv"
     )
 
-    df = pd.read_csv(DATA_PATH)
+    df = pd.read_csv(data_path)
 
     X = df[["math score", "reading score", "writing score"]]
     y = df["test_prep"]
@@ -28,13 +28,16 @@ if __name__ == "__main__":
         X, y, test_size=0.2, random_state=42, stratify=y
     )
 
-    with mlflow.with mlflow.start_run(run_name="CI Logistic Regression", nested=False):():
+    with mlflow.start_run():
         model = LogisticRegression(max_iter=1000)
         model.fit(X_train, y_train)
 
         acc = accuracy_score(y_test, model.predict(X_test))
 
         mlflow.log_metric("accuracy", acc)
-        mlflow.sklearn.log_model(model, "model")
+        mlflow.sklearn.log_model(model, artifact_path="model")
 
         print("Accuracy:", acc)
+
+if __name__ == "__main__":
+    train_model()

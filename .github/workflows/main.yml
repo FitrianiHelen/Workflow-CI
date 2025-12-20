@@ -22,6 +22,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install mlflow pandas scikit-learn
 
-      - name: Run MLflow Project
+      - name: Run Training Directly
         run: |
-          mlflow run MLProject --env-manager=local
+          # Masuk ke folder jika perlu, atau panggil langsung path-nya
+          python MLProject/modelling.py
+        env:
+          MLFLOW_TRACKING_URI: "sqlite:///mlflow.db"
